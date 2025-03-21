@@ -82,14 +82,15 @@ private:
     }
 
 public:
-    DirectMappingCache(int cacheSize, int blockSize, int addressSize)
+    DirectMappingCache(int cacheLine, int blockSize, int addressSize)
     {
-        this->cacheSize = cacheSize;
+        this->cacheLine = cacheLine;
         this->blockSize = blockSize;
         this->addressSize = addressSize;
 
         offsetBits = (int)log2(blockSize);
-        cacheLine = cacheSize / blockSize;
+        cacheSize = cacheLine * blockSize;
+        // cacheLine = cacheSize / blockSize;
         indexBits = (int)log2(cacheLine);
         tagBits = addressSize - indexBits - offsetBits;
 
@@ -173,7 +174,7 @@ public:
             cout << "Hit rate: " << fixed << setprecision(2)
                  << (hits * 100.0 / (hits + misses)) << "% ("
                  << hits << " hits, " << misses << " misses)" << endl;
-            cout << "Hit rate: " << fixed << setprecision(2)
+            cout << "Miss rate: " << fixed << setprecision(2)
                  << (misses * 100.0 / (hits + misses)) << "%" << endl;
         }
         else
@@ -208,7 +209,7 @@ public:
             cout << "Hit rate: " << fixed << setprecision(2)
                  << (hits * 100.0 / (hits + misses)) << "% ("
                  << hits << " hits, " << misses << " misses)" << endl;
-            cout << "Hit rate: " << fixed << setprecision(2)
+            cout << "Miss rate: " << fixed << setprecision(2)
                  << (misses * 100.0 / (hits + misses)) << "%" << endl;
         }
         else
@@ -257,20 +258,20 @@ public:
     }
 
 private:
-    int cacheSize, blockSize, addressSize;
+    int cacheLine, blockSize, addressSize;
     DirectMappingCache *directCache;
 
     // input cacheSize, blockSize, addressSize
     void setupCache()
     {
-        cout << "input CacheSize (bytes): ";
-        cin >> cacheSize;
+        cout << "input CacheLine (entries): ";
+        cin >> cacheLine;
         cout << "input blockSize (bytes): ";
         cin >> blockSize;
         cout << "input addressSize (bits): ";
         cin >> addressSize;
 
-        directCache = new DirectMappingCache(cacheSize, blockSize, addressSize);
+        directCache = new DirectMappingCache(cacheLine, blockSize, addressSize);
         directCache->showCacheConfiguration();
     }
     // show Menu
