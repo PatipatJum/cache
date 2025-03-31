@@ -163,7 +163,7 @@ public:
 
     void printAccessHistory() const
     {
-        // sho Accecss History table
+        // show Accecss History table
         cout << "Access History:" << endl;
         cout << "==========================================================" << endl;
         cout << "| Access # |" << setw(addressSize + 3) << "Address |" << setw(tagBits + 4) << "Tag | " << setw(indexBits) << "Index | " << setw(offsetBits + 4) << "Offset | Result " << endl;
@@ -267,21 +267,6 @@ public:
         accessCount = 0;
         accessHistory.clear();
         resultHistory.clear();
-    }
-
-    int getHit()
-    {
-        return hits;
-    }
-
-    int getMiss()
-    {
-        return misses;
-    }
-
-    int getReplace()
-    {
-        return replaces;
     }
 };
 
@@ -757,21 +742,6 @@ public:
         accessCount = 0;
         accessHistory.clear();
         resultHistory.clear();
-    }
-
-    int getHit()
-    {
-        return hits;
-    }
-
-    int getMiss()
-    {
-        return misses;
-    }
-
-    int getReplace()
-    {
-        return replaces;
     }
 };
 
