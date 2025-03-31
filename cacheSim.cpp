@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std;
-
+// stored vaild tag data lastUsed
 class CacheBlock
 {
 private:
@@ -45,13 +45,13 @@ public:
         lastUsed = time;
     }
 };
-
+// the data structure use store the decimal
 struct Address
 {
     int decimal;
     string binary;
 };
-
+// the data structure use store the address compnentds in the cache
 struct AddressInfo
 {
     string tag;
@@ -163,7 +163,7 @@ public:
 
     void printAccessHistory() const
     {
-        //sho Accecss History table
+        // show Accecss History table
         cout << "Access History:" << endl;
         cout << "==========================================================" << endl;
         cout << "| Access # |" << setw(addressSize + 3) << "Address |" << setw(tagBits + 4) << "Tag | " << setw(indexBits) << "Index | " << setw(offsetBits + 4) << "Offset | Result " << endl;
@@ -203,7 +203,7 @@ public:
 
     void printCacheStatus()
     {
-        //show Cache statues table
+        // show Cache statues table
         cout << "Cache Status:" << endl;
         cout << "========================================================================================" << endl;
         cout << "| Line | Valid | " << setw(tagBits) << "Tag" << " | " << setw(16) << "Data" << " |" << endl;
@@ -252,20 +252,21 @@ public:
         cout << "==========================================================" << endl;
         cout << endl;
     }
-
-    int getHit()
+    void clearCache()
     {
-        return hits;
-    }
-
-    int getMiss()
-    {
-        return misses;
-    }
-
-    int getReplace()
-    {
-        return replaces;
+        for (auto &block : cache)
+        {
+            block.setValid(false);
+            block.setTag("");
+            block.setData("");
+            block.setLastUsed(0);
+        }
+        hits = 0;
+        misses = 0;
+        replaces = 0;
+        accessCount = 0;
+        accessHistory.clear();
+        resultHistory.clear();
     }
 };
 
@@ -489,19 +490,24 @@ public:
         cout << endl;
     }
 
-    int getHit()
+    void clearCache()
     {
-        return hits;
-    }
-
-    int getMiss()
-    {
-        return misses;
-    }
-
-    int getReplace()
-    {
-        return replaces;
+        for (auto &set : cache)
+        {
+            for (auto &block : set)
+            {
+                block.setValid(false);
+                block.setTag("");
+                block.setData("");
+                block.setLastUsed(0);
+            }
+        }
+        hits = 0;
+        misses = 0;
+        replaces = 0;
+        accessCount = 0;
+        accessHistory.clear();
+        resultHistory.clear();
     }
 };
 
@@ -721,51 +727,138 @@ public:
         cout << endl;
     }
 
-    int getHit()
+    void clearCache()
     {
-        return hits;
-    }
-
-    int getMiss()
-    {
-        return misses;
-    }
-
-    int getReplace()
-    {
-        return replaces;
+        for (auto &block : cache)
+        {
+            block.setValid(false);
+            block.setTag("");
+            block.setData("");
+            block.setLastUsed(0);
+        }
+        hits = 0;
+        misses = 0;
+        replaces = 0;
+        accessCount = 0;
+        accessHistory.clear();
+        resultHistory.clear();
     }
 };
 
 class CacheSimulator
 {
 public:
-    CacheSimulator() : directCache(nullptr), nWayCache(nullptr), fullyAssociativeCache(nullptr) {}
+    CacheSimulator() : directCache(nullptr), nWayCache(nullptr), fullyCache(nullptr), cacheSize(0), blockSize(0), addressSize(0) {}
 
     ~CacheSimulator()
     {
-        delete directCache;
-        delete nWayCache;
-        delete fullyAssociativeCache;
+        cleanup();
     }
 
     void run()
     {
         setupCache();
-        showMenu();
+        setupAddresses();
+
+        bool running = true;
+        while (running)
+        {
+            selectCacheType();
+            simulateCache();
+            
+            int choice;
+            do
+            {
+                displayMenu();
+                cin >> choice;
+
+                switch (choice)
+                {
+                case 1: // Show cache status
+                    printCacheStatus();
+                    break;
+                case 2: // Show access history
+                    printAccessHistory();
+                    break;
+                case 3: // Try different cache type
+                    break;
+                case 4: // New addresses
+                    setupCache();
+                    setupAddresses();
+                    break;
+                case 5: // Exit
+                    running = false;
+                    break;
+                default:
+                    cout << "Invalid choice. Please try again." << endl;
+                }
+
+            } while (choice != 3 && choice != 4 && choice != 5);
+        }
     }
 
 private:
+    vector<int> addresses;
     int cacheSize, blockSize, addressSize;
     DirectMappingCache *directCache;
     NWaySetAssociative *nWayCache;
-    FullyAssociativeCache *fullyAssociativeCache;
+    FullyAssociativeCache *fullyCache;
     int cacheType; // 1 = Direct, 2 = N-Way, 3 = Fully Associative
     int nWay;      // Associativity for N-Way
 
-    // Setup cache configuration
+    void displayMenu() const
+    {
+        cout << "\n========== Cache Simulator Options ==========\n";
+        cout << "1. Show cache status\n";
+        cout << "2. Show access history\n";
+        cout << "3. Try different cache type with same addresses\n";
+        cout << "4. Start over with new cache and addresses\n";
+        cout << "5. Exit\n";
+        cout << "Enter choice: ";
+    }
+
+    void setupAddresses()
+    {
+        cout << "\n========== Address Configuration ==========\n";
+        cout << "1. Enter addresses manually\n";
+        cout << "2. Use predefined addresses\n";
+        cout << "Enter choice: ";
+        
+        int choice;
+        cin >> choice;
+
+        addresses.clear();
+        
+        if (choice == 1)
+        {
+            int numAddresses;
+            cout << "Enter number of memory accesses: ";
+            cin >> numAddresses;
+
+            for (int i = 0; i < numAddresses; i++)
+            {
+                int address;
+                cout << "Enter memory address " << (i + 1) << ": ";
+                cin >> address;
+                addresses.push_back(address);
+            }
+        }
+        else
+        {
+            // Predefined address pattern
+            addresses = {0, 4, 16, 132, 232, 160, 1024, 30, 140, 3100, 180, 2180};
+            cout << "Using predefined addresses: ";
+            for (int addr : addresses)
+            {
+                cout << addr << " ";
+            }
+            cout << endl;
+        }
+    }
+
     void setupCache()
     {
+        cout << "\n========== Cache Configuration ==========\n";
         cout << "Input cache size (bytes): ";
         cin >> cacheSize;
         cout << "Input block size (bytes): ";
@@ -773,165 +866,116 @@ private:
         cout << "Input address size (bits): ";
         cin >> addressSize;
 
-        cout << "Select cache type:" << endl;
-        cout << "1. Direct Mapped" << endl;
-        cout << "2. N-Way Set Associative" << endl;
-        cout << "3. Fully Associative" << endl;
+        cleanup(); // Clean up previous cache objects
+    }
+
+    void cleanup()
+    {
+        // Delete any previously allocated cache objects
+        delete directCache;
+        delete nWayCache;
+        delete fullyCache;
+        
+        directCache = nullptr;
+        nWayCache = nullptr;
+        fullyCache = nullptr;
+    }
+
+    void selectCacheType()
+    {
+        cout << "\n========== Cache Type Selection ==========\n";
+        cout << "1. Direct Mapped\n";
+        cout << "2. N-Way Set Associative\n";
+        cout << "3. Fully Associative\n";
         cout << "Enter choice: ";
         cin >> cacheType;
 
-        if (cacheType == 1)
+        // Clear any existing cache data
+        if (directCache != nullptr) directCache->clearCache();
+        if (nWayCache != nullptr) nWayCache->clearCache();
+        if (fullyCache != nullptr) fullyCache->clearCache();
+
+        // Create appropriate cache based on selection
+        switch (cacheType)
         {
-            directCache = new DirectMappingCache(cacheSize, blockSize, addressSize);
+        case 1: // Direct Mapped
+            if (!directCache) directCache = new DirectMappingCache(cacheSize, blockSize, addressSize);
             directCache->showCacheConfiguration();
-        }
-        else if (cacheType == 2)
-        {
+            break;
+        
+        case 2: // N-Way Set Associative
             cout << "Enter associativity (N): ";
             cin >> nWay;
+            delete nWayCache; // Delete previous instance if any
             nWayCache = new NWaySetAssociative(cacheSize, blockSize, addressSize, nWay);
             nWayCache->showCacheConfiguration();
-        }
-        else if (cacheType == 3)
-        {
-            fullyAssociativeCache = new FullyAssociativeCache(cacheSize, blockSize, addressSize);
-            fullyAssociativeCache->showCacheConfiguration();
+            break;
+        
+        case 3: // Fully Associative
+            if (!fullyCache) fullyCache = new FullyAssociativeCache(cacheSize, blockSize, addressSize);
+            fullyCache->showCacheConfiguration();
+            break;
+        
+        default:
+            cout << "Invalid choice. Using Direct Mapped as default.\n";
+            cacheType = 1;
+            if (!directCache) directCache = new DirectMappingCache(cacheSize, blockSize, addressSize);
+            directCache->showCacheConfiguration();
         }
     }
 
-    // Show menu
-    void showMenu()
+    void simulateCache()
     {
-        int choice;
-        do
+        cout << "\nSimulating memory access...\n";
+        
+        for (int addr : addresses)
         {
-            cout << "\nMenu:" << endl;
-            cout << "1. Access addresses" << endl;
-            cout << "2. Show cache status" << endl;
-            cout << "3. Show access history" << endl;
-            cout << "4. Exit" << endl;
-            cout << "Enter your choice: ";
-            cin >> choice;
-            handleMenuChoice(choice);
-        } while (choice != 4);
+            switch (cacheType)
+            {
+            case 1:
+                directCache->accessMemory(addr);
+                break;
+            case 2:
+                nWayCache->accessMemory(addr);
+                break;
+            case 3:
+                fullyCache->accessMemory(addr);
+                break;
+            }
+        }
+        
+        cout << "Simulation complete.\n";
     }
 
-    // Handle menu choices
-    void handleMenuChoice(int choice)
+    void printCacheStatus() const
     {
-        switch (choice)
+        switch (cacheType)
         {
         case 1:
-            accessAddresses();
+            directCache->printCacheStatus();
             break;
         case 2:
-            showCacheStatus();
+            nWayCache->printCacheStatus();
             break;
         case 3:
-            showAccessHistory();
+            fullyCache->printCacheStatus();
             break;
-        case 4:
-            cout << "Exiting program." << endl;
-            break;
-        default:
-            cout << "Invalid choice. Please try again." << endl;
         }
     }
 
-    // Redirect to appropriate cache's status method
-    void showCacheStatus()
+    void printAccessHistory() const
     {
-        if (cacheType == 2)
+        switch (cacheType)
         {
-            nWayCache->printCacheStatus();
-        }
-        else if (cacheType == 3)
-        {
-            fullyAssociativeCache->printCacheStatus();
-        }
-        else
-        {
-            directCache->printCacheStatus();
-        }
-    }
-
-    // Redirect to appropriate cache's history method
-    void showAccessHistory()
-    {
-        if (cacheType == 2)
-        {
-            nWayCache->printAccessHistory();
-        }
-        else if (cacheType == 3)
-        {
-            fullyAssociativeCache->printAccessHistory();
-        }
-        else
-        {
+        case 1:
             directCache->printAccessHistory();
-        }
-    }
-
-    // Access memory addresses
-    void accessAddresses()
-    {
-        int choice;
-        cout << "1. Enter addresses manually" << endl;
-        cout << "2. Use predefined addresses" << endl;
-        cout << "Enter choice: ";
-        cin >> choice;
-
-        if (choice == 1)
-        {
-            int numAccesses;
-            cout << "Enter number of memory accesses: ";
-            cin >> numAccesses;
-
-            for (int i = 0; i < numAccesses; i++)
-            {
-                int address;
-                cout << "Enter memory address " << (i + 1) << ": ";
-                cin >> address;
-
-                if (cacheType == 2)
-                {
-                    nWayCache->accessMemory(address);
-                }
-                else if (cacheType == 3)
-                {
-                    fullyAssociativeCache->accessMemory(address);
-                }
-                else
-                {
-                    directCache->accessMemory(address);
-                }
-            }
-        }
-        else
-        {
-            // Predefined addresses for testing
-            int addresses[] = {112, 128, 104, 400, 132, 376, 149, 3840, 100};
-            // int addresses[] = {0, 4, 16, 132, 232, 160, 1024, 30, 140, 3100, 180, 2180};
-
-            int numAddresses = sizeof(addresses) / sizeof(addresses[0]);
-
-            for (int i = 0; i < numAddresses; i++)
-            {
-                cout << "Memory address " << (i + 1) << ": " << addresses[i] << endl;
-
-                if (cacheType == 2)
-                {
-                    nWayCache->accessMemory(addresses[i]);
-                }
-                else if (cacheType == 3)
-                {
-                    fullyAssociativeCache->accessMemory(addresses[i]);
-                }
-                else
-                {
-                    directCache->accessMemory(addresses[i]);
-                }
-            }
+            break;
+        case 2:
+            nWayCache->printAccessHistory();
+            break;
+        case 3:
+            fullyCache->printAccessHistory();
+            break;
         }
     }
 };
@@ -939,10 +983,7 @@ private:
 int main()
 {
     cout << "Cache Memory Simulator" << endl;
-    cout << "======================" << endl;
-
     CacheSimulator simulator;
     simulator.run();
-
     return 0;
 }
